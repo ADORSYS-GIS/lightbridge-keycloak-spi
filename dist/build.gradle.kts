@@ -16,9 +16,9 @@ dependencies {
     providerJars(project(":modules:protocol-mapper"))
 }
 
-val collectProviders by tasks.registering(Copy::class) {
+val collectProviders by tasks.registering(Sync::class) {
     group = "distribution"
-    description = "Copies all Lightbridge provider jars into build/providers for deployment into Keycloak."
+    description = "Collects all Lightbridge provider jars into build/providers for deployment into Keycloak."
     from(providerJars)
     into(layout.buildDirectory.dir("providers"))
 }

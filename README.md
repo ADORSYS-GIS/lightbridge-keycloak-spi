@@ -97,6 +97,13 @@ Build it locally (with buildah or Docker):
 buildah build -f Containerfile -t lightbridge-keycloak-spi .   # or: docker build -f Containerfile -t ... .
 ```
 
+## Releases
+
+Pushing a `vX.Y.Z` tag publishes the four provider jars (versioned to the tag) plus a
+`…-providers.tar.gz` bundle to [GitHub Releases](../../releases) via
+[`.github/workflows/release.yml`](.github/workflows/release.yml), and pushes the matching container image tag to
+GHCR (above). Grab the jars from Releases for a manual `providers/` drop-in, or pull the image.
+
 ## Local demo
 
 [`demo/`](demo/) has a Docker Compose stack (Keycloak 26 + a WireMock stub resolver) and a curl walkthrough for

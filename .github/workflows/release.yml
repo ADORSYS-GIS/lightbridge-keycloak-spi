@@ -1,0 +1,66 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release, without the leading v (e.g. 0.1.0)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: arc-runner-set-sse
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Resolve version
+        id: v
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          if [ "$REF_TYPE" = "tag" ]; then
+            version="${REF_NAME#v}"
+          else
+            version="$INPUT_VERSION"
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Releasing version $version"
+
+      - name: Build provider jars
+        run: ./gradlew clean :dist:collectProviders -Pversion=${{ steps.v.outputs.version }} --console=plain
+
+      - name: Bundle provider jars
+        env:
+          VERSION: ${{ steps.v.outputs.version }}
+        run: |
+          set -euo pipefail
+          ( cd dist/build/providers && tar -czf "lightbridge-keycloak-spi-${VERSION}-providers.tar.gz" *.jar )
+          ls -l dist/build/providers
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.v.outputs.version }}
+          name: v${{ steps.v.outputs.version }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: |
+            dist/build/providers/*.jar
+            dist/build/providers/*.tar.gz

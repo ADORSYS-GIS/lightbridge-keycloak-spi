@@ -39,8 +39,10 @@ four thin jars) · `integration-tests` (real-Keycloak Testcontainers).
 ./gradlew :integration-tests:test  # boot real Keycloak 26 and assert SPI registration (needs Docker)
 ```
 
-CI: `ci.yml` (build + tests) and `image.yml` (buildah build of a Keycloak image with the providers baked in →
-GHCR). The image is validated by building `Containerfile` locally: `kc.sh build` must register both providers.
+CI (all on the self-hosted `arc-runner-set-sse` runner set): `ci.yml` (build + tests), `image.yml` (buildah
+build of a Keycloak image with the providers baked in → GHCR), and `release.yml` (on `vX.Y.Z` tags: jars
+versioned via `-Pversion` + a tar.gz → GitHub Releases). The image is validated by building `Containerfile`
+locally: `kc.sh build` must register both providers.
 
 ## Conventions that bite
 
