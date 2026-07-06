@@ -4,7 +4,10 @@ import com.adorsysgis.lightbridge.keycloak.common.LightbridgeConfig;
 import org.keycloak.Config;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Locale;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Maps Keycloak's {@code Config.Scope} (and environment fallbacks) into the Keycloak-agnostic
@@ -34,6 +37,7 @@ final class LightbridgeConfigFactory {
                 LightbridgeConfig.DEFAULT_REQUEST_ID_PARAM);
         long timeoutMillis = longValue(scope, "timeout-millis", "TIMEOUT_MILLIS",
                 LightbridgeConfig.DEFAULT_TIMEOUT.toMillis());
+        Set<String> allowedRealms = parseRealms(value(scope, "allowed-realms", "ALLOWED_REALMS", null));
 
         return LightbridgeConfig.builder()
                 .resolverBaseUrl(baseUrl)
@@ -44,7 +48,18 @@ final class LightbridgeConfigFactory {
                 .basicPassword(basicPassword)
                 .requestIdParam(requestIdParam)
                 .requestTimeout(Duration.ofMillis(timeoutMillis))
+                .allowedRealms(allowedRealms)
                 .build();
+    }
+
+    private static Set<String> parseRealms(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return Set.of();
+        }
+        return Arrays.stream(raw.split(","))
+                .map(String::trim)
+                .filter(part -> !part.isEmpty())
+                .collect(Collectors.toUnmodifiableSet());
     }
 
     private static LightbridgeConfig.AuthMode parseAuthMode(String raw) {

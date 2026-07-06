@@ -73,6 +73,12 @@ public class LightbridgeTokenExchangeProvider extends StandardTokenExchangeProvi
         String clientId = client == null ? null : client.getClientId();
         String realmName = realm == null ? null : realm.getName();
 
+        if (!config.isRealmAllowed(realmName)) {
+            LOG.log(Level.WARNING, "Lightbridge token exchange rejected for realm: " + realmName);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED,
+                    "Realm is not permitted to use Lightbridge token exchange", Response.Status.FORBIDDEN);
+        }
+
         try {
             ResolvedContext resolved = resolver.resolve(new ContextRequest(requestId, subject, clientId, realmName));
             targetUserSession.setNote(LightbridgeSessionNotes.ACCOUNT_ID, resolved.accountId());

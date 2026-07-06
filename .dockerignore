@@ -1,0 +1,11 @@
+.git
+.gradle
+build
+buildSrc/build
+modules/spi-common/build
+modules/context-client/build
+modules/token-exchange/build
+modules/protocol-mapper/build
+integration-tests/build
+# keep dist/build/providers — the jars are copied into the image
+!dist/build/providers

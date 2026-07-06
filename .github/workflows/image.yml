@@ -1,0 +1,65 @@
+name: Image
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Assemble provider jars
+        run: ./gradlew :dist:collectProviders --console=plain
+
+      - name: Ensure buildah is available
+        run: buildah --version || (sudo apt-get update && sudo apt-get install -y buildah)
+
+      - name: Build and push image with buildah
+        env:
+          REPO: ${{ github.repository }}
+          ACTOR: ${{ github.actor }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          image="ghcr.io/$(echo "$REPO" | tr '[:upper:]' '[:lower:]')"
+          kcv=$(grep -E '^keycloak[[:space:]]*=' gradle/libs.versions.toml | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
+
+          tags="latest ${SHA} kc-${kcv}"
+          if [ "$REF_TYPE" = "tag" ]; then
+            tags="$tags ${REF_NAME}"
+          fi
+
+          echo "Building $image with Keycloak $kcv; tags: $tags"
+
+          tag_args=""
+          for t in $tags; do
+            tag_args="$tag_args --tag ${image}:${t}"
+          done
+
+          buildah build --build-arg "KEYCLOAK_VERSION=${kcv}" $tag_args --file Containerfile .
+
+          buildah login --username "$ACTOR" --password "$GH_TOKEN" ghcr.io
+          for t in $tags; do
+            buildah push "${image}:${t}"
+          done

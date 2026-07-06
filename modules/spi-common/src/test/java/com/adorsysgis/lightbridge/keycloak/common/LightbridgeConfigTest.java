@@ -3,6 +3,7 @@ package com.adorsysgis.lightbridge.keycloak.common;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -46,5 +47,37 @@ class LightbridgeConfigTest {
         assertThat(config.basicUsername()).isEqualTo("authorino");
         assertThat(config.requestIdParam()).isEqualTo("req_id");
         assertThat(config.requestTimeout()).isEqualTo(Duration.ofSeconds(2));
+    }
+
+    @Test
+    void allowsEveryRealmWhenNoAllowListConfigured() {
+        LightbridgeConfig config = LightbridgeConfig.builder().resolverBaseUrl("https://authz.example").build();
+
+        assertThat(config.isRealmAllowed("dev")).isTrue();
+        assertThat(config.isRealmAllowed("anything")).isTrue();
+        assertThat(config.isRealmAllowed(null)).isTrue();
+    }
+
+    @Test
+    void enforcesAllowListWhenConfigured() {
+        LightbridgeConfig config = LightbridgeConfig.builder()
+                .resolverBaseUrl("https://authz.example")
+                .allowedRealms(Set.of("prod", "staging"))
+                .build();
+
+        assertThat(config.isRealmAllowed("prod")).isTrue();
+        assertThat(config.isRealmAllowed("staging")).isTrue();
+        assertThat(config.isRealmAllowed("dev")).isFalse();
+        assertThat(config.isRealmAllowed(null)).isFalse();
+    }
+
+    @Test
+    void allowedRealmsIsDefensivelyCopiedAndImmutable() {
+        java.util.Set<String> mutable = new java.util.HashSet<>(Set.of("prod"));
+        LightbridgeConfig config = LightbridgeConfig.builder().allowedRealms(mutable).build();
+        mutable.add("sneaky");
+
+        assertThat(config.isRealmAllowed("sneaky")).isFalse();
+        assertThat(config.allowedRealms()).containsExactly("prod");
     }
 }

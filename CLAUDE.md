@@ -16,7 +16,9 @@ of truth for *why* the code is shaped this way.
 - **`token-exchange` (smart):** `LightbridgeTokenExchangeProvider extends StandardTokenExchangeProvider`,
   overrides exactly one method — `exchangeClientToOIDCClient(...)` — to resolve `request_id` via the
   `ContextResolver` and write `lightbridge.account_id`/`lightbridge.project_id` **user-session notes**. Selected
-  over the built-in provider by factory `order()=100` + a `supports()` that gates on `request_id`.
+  over the built-in provider by factory `order()=100` + a `supports()` that gates on `request_id`. Optional
+  `allowed-realms` enforcement is **fail-closed inside the provider** (not `supports()`, which would fall back to
+  the standard provider and leak a context-less token) — see [ADR-0007](docs/adr/0007-realm-enforcement.md).
 - **`protocol-mapper` (dumb):** `LightbridgeContextMapper` only copies those notes into claims. **Never** add
   HTTP or business logic here — that is an architectural invariant ([ADR-0003](docs/adr/0003-dumb-protocol-mapper.md)).
 
@@ -36,6 +38,9 @@ four thin jars) · `integration-tests` (real-Keycloak Testcontainers).
 ./gradlew :dist:collectProviders   # assemble provider jars → dist/build/providers/
 ./gradlew :integration-tests:test  # boot real Keycloak 26 and assert SPI registration (needs Docker)
 ```
+
+CI: `ci.yml` (build + tests) and `image.yml` (buildah build of a Keycloak image with the providers baked in →
+GHCR). The image is validated by building `Containerfile` locally: `kc.sh build` must register both providers.
 
 ## Conventions that bite
 

@@ -10,3 +10,4 @@ Lightweight [MADR](https://adr.github.io/madr/)-style records of the decisions b
 | [0004](0004-context-resolution-contract.md) | Context-resolution HTTP contract; backend endpoint is a tracked external dependency |
 | [0005](0005-build-and-packaging.md) | Gradle multi-module, Java 21, Keycloak `compileOnly`, no shading |
 | [0006](0006-session-note-and-claim-naming.md) | Session-note namespace and claim naming |
+| [0007](0007-realm-enforcement.md) | Optional per-realm allow-list, fail-closed |

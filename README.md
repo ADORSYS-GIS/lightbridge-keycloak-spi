@@ -70,12 +70,31 @@ Each key also has a `LIGHTBRIDGE_*` environment fallback for containers.
 | `basic-username` / `basic-password` | `LIGHTBRIDGE_BASIC_USERNAME` / `_PASSWORD` | — | Basic creds (auth-mode `BASIC`) |
 | `request-id-param` | `LIGHTBRIDGE_REQUEST_ID_PARAM` | `request_id` | Inbound form parameter name |
 | `timeout-millis` | `LIGHTBRIDGE_TIMEOUT_MILLIS` | `5000` | HTTP timeout |
+| `allowed-realms` | `LIGHTBRIDGE_ALLOWED_REALMS` | — (all realms) | Comma-separated realm allow-list. Empty = every realm allowed; set = only these realms may use the exchange (fail closed, `access_denied` otherwise). See [ADR-0007](docs/adr/0007-realm-enforcement.md). |
 
 Example (`keycloak.conf`):
 
 ```properties
 spi-oauth2-token-exchange-lightbridge-standard-resolver-base-url=https://authz-api:3000
 spi-oauth2-token-exchange-lightbridge-standard-auth-mode=BEARER
+```
+
+## Container image
+
+CI ([`​.github/workflows/image.yml`](.github/workflows/image.yml)) builds a Keycloak image with the provider jars
+baked in (`kc.sh build`) using **buildah** and pushes it to **GHCR** on every push to `main` and on `v*` tags:
+
+```
+ghcr.io/adorsys-gis/lightbridge-keycloak-spi:latest
+ghcr.io/adorsys-gis/lightbridge-keycloak-spi:kc-26.6.4
+ghcr.io/adorsys-gis/lightbridge-keycloak-spi:<git-sha | git-tag>
+```
+
+Build it locally (with buildah or Docker):
+
+```bash
+./gradlew :dist:collectProviders
+buildah build -f Containerfile -t lightbridge-keycloak-spi .   # or: docker build -f Containerfile -t ... .
 ```
 
 ## Local demo
