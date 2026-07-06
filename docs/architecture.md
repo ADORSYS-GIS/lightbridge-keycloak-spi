@@ -36,7 +36,7 @@ sequenceDiagram
 
     C->>KC: grant_type=token-exchange<br/>subject_token, audience=api, request_id=req-123
     KC->>TE: factory order 100 → supports() true (request_id present)
-    TE->>IRS: POST /idp/v1/resolve-context {request_id, subject, client_id}
+    TE->>IRS: POST /idp/v1/resolve-context {request_id, subject, client_id, realm}
     IRS-->>TE: 200 {account_id, project_id}
     TE->>TE: userSession.setNote("lightbridge.account_id"/"lightbridge.project_id")
     TE->>KC: super.exchangeClientToOIDCClient(...) builds token

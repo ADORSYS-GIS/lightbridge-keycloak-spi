@@ -71,9 +71,10 @@ public class LightbridgeTokenExchangeProvider extends StandardTokenExchangeProvi
 
         String subject = targetUser == null ? null : targetUser.getId();
         String clientId = client == null ? null : client.getClientId();
+        String realmName = realm == null ? null : realm.getName();
 
         try {
-            ResolvedContext resolved = resolver.resolve(new ContextRequest(requestId, subject, clientId));
+            ResolvedContext resolved = resolver.resolve(new ContextRequest(requestId, subject, clientId, realmName));
             targetUserSession.setNote(LightbridgeSessionNotes.ACCOUNT_ID, resolved.accountId());
             targetUserSession.setNote(LightbridgeSessionNotes.PROJECT_ID, resolved.projectId());
         } catch (ContextResolutionException e) {

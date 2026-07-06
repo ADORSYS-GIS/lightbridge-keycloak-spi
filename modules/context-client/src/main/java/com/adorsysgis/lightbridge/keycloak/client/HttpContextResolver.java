@@ -99,6 +99,7 @@ public final class HttpContextResolver implements ContextResolver {
         node.put("request_id", request.requestId());
         node.put("subject", request.subject());
         node.put("client_id", request.clientId());
+        node.put("realm", request.realm());
         try {
             return objectMapper.writeValueAsString(node);
         } catch (JsonProcessingException e) {

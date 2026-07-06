@@ -42,13 +42,14 @@ class HttpContextResolverTest {
     @Test
     void resolvesAccountAndProjectOnSuccess() {
         server.stubFor(post(urlEqualTo("/idp/v1/resolve-context"))
-                .withRequestBody(equalToJson("{\"request_id\":\"req-123\",\"subject\":\"user-1\",\"client_id\":\"cli\"}"))
+                .withRequestBody(equalToJson(
+                        "{\"request_id\":\"req-123\",\"subject\":\"user-1\",\"client_id\":\"cli\",\"realm\":\"dev\"}"))
                 .willReturn(aResponse().withStatus(200)
                         .withHeader("Content-Type", "application/json")
                         .withBody("{\"account_id\":\"acc-456\",\"project_id\":\"proj-789\"}")));
 
         ResolvedContext context = new HttpContextResolver(baseConfig().build())
-                .resolve(new ContextRequest("req-123", "user-1", "cli"));
+                .resolve(new ContextRequest("req-123", "user-1", "cli", "dev"));
 
         assertThat(context.accountId()).isEqualTo("acc-456");
         assertThat(context.projectId()).isEqualTo("proj-789");
@@ -61,7 +62,7 @@ class HttpContextResolverTest {
 
         ContextResolutionException ex = catchThrowableOfType(
                 () -> new HttpContextResolver(baseConfig().build())
-                        .resolve(new ContextRequest("gone", "user-1", "cli")),
+                        .resolve(new ContextRequest("gone", "user-1", "cli", "dev")),
                 ContextResolutionException.class);
 
         assertThat(ex).isNotNull();
@@ -75,7 +76,7 @@ class HttpContextResolverTest {
                 .willReturn(aResponse().withStatus(500)));
 
         assertThatThrownBy(() -> new HttpContextResolver(baseConfig().build())
-                .resolve(new ContextRequest("req", "user-1", "cli")))
+                .resolve(new ContextRequest("req", "user-1", "cli", "dev")))
                 .isInstanceOf(ContextResolutionException.class)
                 .hasMessageContaining("500");
     }
@@ -88,7 +89,7 @@ class HttpContextResolverTest {
                         .withBody("{\"account_id\":\"acc-456\"}")));
 
         assertThatThrownBy(() -> new HttpContextResolver(baseConfig().build())
-                .resolve(new ContextRequest("req", "user-1", "cli")))
+                .resolve(new ContextRequest("req", "user-1", "cli", "dev")))
                 .isInstanceOf(ContextResolutionException.class)
                 .hasMessageContaining("missing");
     }
@@ -104,7 +105,7 @@ class HttpContextResolverTest {
                 .basicUsername("authorino")
                 .basicPassword("change-me")
                 .build())
-                .resolve(new ContextRequest("req", "user-1", "cli"));
+                .resolve(new ContextRequest("req", "user-1", "cli", "dev"));
 
         String expected = "Basic " + java.util.Base64.getEncoder()
                 .encodeToString("authorino:change-me".getBytes(java.nio.charset.StandardCharsets.UTF_8));
@@ -115,7 +116,7 @@ class HttpContextResolverTest {
     @Test
     void failsFastWhenResolverNotConfigured() {
         assertThatThrownBy(() -> new HttpContextResolver(LightbridgeConfig.builder().build())
-                .resolve(new ContextRequest("req", "user-1", "cli")))
+                .resolve(new ContextRequest("req", "user-1", "cli", "dev")))
                 .isInstanceOf(ContextResolutionException.class)
                 .hasMessageContaining("not configured");
     }

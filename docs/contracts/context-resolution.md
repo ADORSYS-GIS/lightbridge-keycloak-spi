@@ -21,9 +21,10 @@ Authorization: <depends on configured auth mode>
 | `request_id` | string | Opaque, single-use pointer minted by the Identity Request Service. Required. |
 | `subject`    | string | Authenticated subject id from the exchanged token. May be null. |
 | `client_id`  | string | OAuth client performing the exchange. May be null.          |
+| `realm`      | string | Keycloak realm the exchange occurred in. Always sent; lets a multi-tenant service scope resolution per realm. May be null. |
 
 ```json
-{ "request_id": "req-123", "subject": "user-abc", "client_id": "lightbridge-cli" }
+{ "request_id": "req-123", "subject": "user-abc", "client_id": "lightbridge-cli", "realm": "dev" }
 ```
 
 ### Responses
@@ -86,6 +87,7 @@ components:
         request_id: { type: string }
         subject: { type: string, nullable: true }
         client_id: { type: string, nullable: true }
+        realm: { type: string, nullable: true }
     ResolveContextResponse:
       type: object
       required: [account_id, project_id]
