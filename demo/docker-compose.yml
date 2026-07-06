@@ -1,0 +1,29 @@
+name: lightbridge-keycloak-spi-demo
+
+services:
+  wiremock:
+    image: wiremock/wiremock:3.13.2
+    command: ["--port", "8080", "--verbose"]
+    volumes:
+      - ./wiremock:/home/wiremock
+    ports:
+      - "18080:8080"
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.6.4
+    command: ["start-dev"]
+    depends_on:
+      - wiremock
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      # Point the Lightbridge token-exchange provider at the stub resolver.
+      # (LIGHTBRIDGE_* is the container-friendly fallback for the SPI config keys.)
+      LIGHTBRIDGE_RESOLVER_BASE_URL: http://wiremock:8080
+      LIGHTBRIDGE_RESOLVER_PATH: /idp/v1/resolve-context
+      LIGHTBRIDGE_AUTH_MODE: NONE
+    volumes:
+      # Build the jars first: `./gradlew :dist:collectProviders`
+      - ../dist/build/providers:/opt/keycloak/providers:ro
+    ports:
+      - "8080:8080"

@@ -1,0 +1,16 @@
+{
+  "request": {
+    "method": "POST",
+    "urlPath": "/idp/v1/resolve-context"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "account_id": "acc-demo-456",
+      "project_id": "proj-demo-789"
+    }
+  }
+}
