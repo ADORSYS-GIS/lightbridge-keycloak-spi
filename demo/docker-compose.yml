@@ -11,7 +11,7 @@ services:
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.6.4
-    command: ["start-dev"]
+    command: ["start-dev", "--import-realm"]
     depends_on:
       - wiremock
     environment:
@@ -25,5 +25,8 @@ services:
     volumes:
       # Build the jars first: `./gradlew :dist:collectProviders`
       - ../dist/build/providers:/opt/keycloak/providers:ro
+      # Turnkey `demo` realm: the lightbridge-cli client, the Lightbridge Context Mapper, and
+      # standard token exchange are pre-wired so the flow needs no manual admin-console setup.
+      - ./realm-demo.json:/opt/keycloak/data/import/realm-demo.json:ro
     ports:
       - "8080:8080"
