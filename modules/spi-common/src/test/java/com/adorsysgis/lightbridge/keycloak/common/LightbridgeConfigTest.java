@@ -14,11 +14,11 @@ class LightbridgeConfigTest {
         LightbridgeConfig config = LightbridgeConfig.builder()
                 .resolverBaseUrl("https://authz.example")
                 .resolverPath("  ")
-                .requestIdParam("")
+                .projectIdParam("")
                 .build();
 
         assertThat(config.resolverPath()).isEqualTo(LightbridgeConfig.DEFAULT_PATH);
-        assertThat(config.requestIdParam()).isEqualTo(LightbridgeConfig.DEFAULT_REQUEST_ID_PARAM);
+        assertThat(config.projectIdParam()).isEqualTo(LightbridgeConfig.DEFAULT_PROJECT_ID_PARAM);
         assertThat(config.requestTimeout()).isEqualTo(LightbridgeConfig.DEFAULT_TIMEOUT);
     }
 
@@ -38,14 +38,14 @@ class LightbridgeConfigTest {
                 .authMode(LightbridgeConfig.AuthMode.BASIC)
                 .basicUsername("authorino")
                 .basicPassword("secret")
-                .requestIdParam("req_id")
+                .projectIdParam("proj_id")
                 .requestTimeout(Duration.ofSeconds(2))
                 .build();
 
         assertThat(config.resolverPath()).isEqualTo("/custom/resolve");
         assertThat(config.authMode()).isEqualTo(LightbridgeConfig.AuthMode.BASIC);
         assertThat(config.basicUsername()).isEqualTo("authorino");
-        assertThat(config.requestIdParam()).isEqualTo("req_id");
+        assertThat(config.projectIdParam()).isEqualTo("proj_id");
         assertThat(config.requestTimeout()).isEqualTo(Duration.ofSeconds(2));
     }
 

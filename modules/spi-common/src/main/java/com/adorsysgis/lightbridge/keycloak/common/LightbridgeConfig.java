@@ -17,7 +17,7 @@ public record LightbridgeConfig(
         String basicUsername,
         String basicPassword,
         Duration requestTimeout,
-        String requestIdParam,
+        String projectIdParam,
         Set<String> allowedRealms) {
 
     /** How the adapter authenticates to the Identity Request Service. */
@@ -28,7 +28,7 @@ public record LightbridgeConfig(
     }
 
     public static final String DEFAULT_PATH = "/idp/v1/resolve-context";
-    public static final String DEFAULT_REQUEST_ID_PARAM = "request_id";
+    public static final String DEFAULT_PROJECT_ID_PARAM = "project_id";
     public static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(5);
 
     public LightbridgeConfig {
@@ -37,8 +37,8 @@ public record LightbridgeConfig(
         if (resolverPath == null || resolverPath.isBlank()) {
             resolverPath = DEFAULT_PATH;
         }
-        if (requestIdParam == null || requestIdParam.isBlank()) {
-            requestIdParam = DEFAULT_REQUEST_ID_PARAM;
+        if (projectIdParam == null || projectIdParam.isBlank()) {
+            projectIdParam = DEFAULT_PROJECT_ID_PARAM;
         }
         allowedRealms = allowedRealms == null ? Set.of() : Set.copyOf(allowedRealms);
     }
@@ -73,7 +73,7 @@ public record LightbridgeConfig(
         private String basicUsername;
         private String basicPassword;
         private Duration requestTimeout = DEFAULT_TIMEOUT;
-        private String requestIdParam = DEFAULT_REQUEST_ID_PARAM;
+        private String projectIdParam = DEFAULT_PROJECT_ID_PARAM;
         private Set<String> allowedRealms = Set.of();
 
         public Builder resolverBaseUrl(String value) {
@@ -111,8 +111,8 @@ public record LightbridgeConfig(
             return this;
         }
 
-        public Builder requestIdParam(String value) {
-            this.requestIdParam = value;
+        public Builder projectIdParam(String value) {
+            this.projectIdParam = value;
             return this;
         }
 
@@ -123,7 +123,7 @@ public record LightbridgeConfig(
 
         public LightbridgeConfig build() {
             return new LightbridgeConfig(resolverBaseUrl, resolverPath, authMode, bearerToken,
-                    basicUsername, basicPassword, requestTimeout, requestIdParam, allowedRealms);
+                    basicUsername, basicPassword, requestTimeout, projectIdParam, allowedRealms);
         }
     }
 }

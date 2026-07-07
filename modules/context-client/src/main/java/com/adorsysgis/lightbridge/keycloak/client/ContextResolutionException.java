@@ -1,9 +1,9 @@
 package com.adorsysgis.lightbridge.keycloak.client;
 
 /**
- * Raised when a {@code request_id} cannot be resolved to context. Carries the upstream HTTP status
- * (or {@code -1} for transport/parse failures) so callers can distinguish "unknown request" from
- * "service unavailable".
+ * Raised when a {@code (subject, project_id)} pair cannot be resolved to context. Carries the upstream
+ * HTTP status (or {@code -1} for transport/parse failures) so callers can distinguish "unknown request"
+ * from "service unavailable".
  */
 public class ContextResolutionException extends RuntimeException {
 
@@ -33,7 +33,7 @@ public class ContextResolutionException extends RuntimeException {
         return statusCode;
     }
 
-    /** True when the Identity Request Service reported the request_id as unknown/expired/consumed. */
+    /** True when the Identity Request Service reported the subject as not a member, or the project unknown. */
     public boolean isNotFound() {
         return statusCode == 404;
     }

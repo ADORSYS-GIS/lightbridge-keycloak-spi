@@ -22,8 +22,8 @@ import java.util.List;
 
 /**
  * Extends Keycloak's standard token exchange with a single responsibility: when the request carries a
- * {@code request_id}, resolve it to business context and stash the result in user-session notes so the
- * dumb {@code LightbridgeContextMapper} can copy it into claims.
+ * {@code project_id}, resolve {@code (subject, project_id)} to business context and stash the result in
+ * user-session notes so the dumb {@code LightbridgeContextMapper} can copy it into claims.
  *
  * <p>Everything else is delegated to {@link StandardTokenExchangeProvider}. The only overridden seam is
  * {@link #exchangeClientToOIDCClient}, which runs after the target user session exists but before the
@@ -46,11 +46,11 @@ public class LightbridgeTokenExchangeProvider extends StandardTokenExchangeProvi
 
     @Override
     public boolean supports(TokenExchangeContext context) {
-        return super.supports(context) && hasRequestId(context);
+        return super.supports(context) && hasProjectId(context);
     }
 
-    boolean hasRequestId(TokenExchangeContext context) {
-        String value = context.getFormParams().getFirst(config.requestIdParam());
+    boolean hasProjectId(TokenExchangeContext context) {
+        String value = context.getFormParams().getFirst(config.projectIdParam());
         return value != null && !value.isBlank();
     }
 
@@ -64,13 +64,12 @@ public class LightbridgeTokenExchangeProvider extends StandardTokenExchangeProvi
     }
 
     private void injectContext(UserModel targetUser, UserSessionModel targetUserSession) {
-        String requestId = formParams.getFirst(config.requestIdParam());
-        if (requestId == null || requestId.isBlank()) {
+        String projectId = formParams.getFirst(config.projectIdParam());
+        if (projectId == null || projectId.isBlank()) {
             return;
         }
 
         String subject = targetUser == null ? null : targetUser.getId();
-        String clientId = client == null ? null : client.getClientId();
         String realmName = realm == null ? null : realm.getName();
 
         if (!config.isRealmAllowed(realmName)) {
@@ -80,7 +79,7 @@ public class LightbridgeTokenExchangeProvider extends StandardTokenExchangeProvi
         }
 
         try {
-            ResolvedContext resolved = resolver.resolve(new ContextRequest(requestId, subject, clientId, realmName));
+            ResolvedContext resolved = resolver.resolve(new ContextRequest(subject, projectId));
             targetUserSession.setNote(LightbridgeSessionNotes.ACCOUNT_ID, resolved.accountId());
             targetUserSession.setNote(LightbridgeSessionNotes.PROJECT_ID, resolved.projectId());
         } catch (ContextResolutionException e) {

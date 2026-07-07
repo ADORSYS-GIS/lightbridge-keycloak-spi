@@ -2,7 +2,8 @@
 
 This repo is the **Keycloak IdP-adapter layer** of a portable token-orchestration design
 ([ADR-0001](adr/0001-idp-agnostic-token-orchestration.md)). The IdP never understands the business model:
-`request_id` is the only bridge, `aud` stays a clean OAuth audience, and all resolution logic is external.
+a `project_id` form param is the only bridge, `aud` stays a clean OAuth audience, and all resolution logic
+is external.
 
 ## Layers
 
@@ -24,7 +25,7 @@ flowchart TB
     KC --> JWT
 ```
 
-## The request_id flow
+## The project_id flow
 
 ```mermaid
 sequenceDiagram
@@ -34,9 +35,9 @@ sequenceDiagram
     participant IRS as Identity Request Service
     participant PM as LightbridgeContextMapper
 
-    C->>KC: grant_type=token-exchange<br/>subject_token, audience=api, request_id=req-123
-    KC->>TE: factory order 100 → supports() true (request_id present)
-    TE->>IRS: POST /idp/v1/resolve-context {request_id, subject, client_id, realm}
+    C->>KC: grant_type=token-exchange<br/>subject_token, audience=api, project_id=proj-123
+    KC->>TE: factory order 100 → supports() true (project_id present)
+    TE->>IRS: POST /idp/v1/resolve-context {subject, project_id}
     IRS-->>TE: 200 {account_id, project_id}
     TE->>TE: userSession.setNote("lightbridge.account_id"/"lightbridge.project_id")
     TE->>KC: super.exchangeClientToOIDCClient(...) builds token
@@ -45,7 +46,7 @@ sequenceDiagram
     KC-->>C: JWT { aud=api, sub, account_id, project_id }
 ```
 
-When no `request_id` is present, `supports()` returns false and Keycloak's built-in
+When no `project_id` is present, `supports()` returns false and Keycloak's built-in
 `StandardTokenExchangeProvider` (order 10) handles the exchange unchanged.
 
 ## Keycloak 26.6 SPI surface used
@@ -54,7 +55,7 @@ When no `request_id` is present, `supports()` returns false and Keycloak's built
 | --- | --- | --- | --- |
 | Interception | `TokenExchangeProvider` / `TokenExchangeProviderFactory` | `org.keycloak.protocol.oidc` | SPI id `oauth2-token-exchange`; select by `order()` + `supports()` |
 | Base impl extended | `StandardTokenExchangeProvider` | `org.keycloak.protocol.oidc.tokenexchange` | override only `exchangeClientToOIDCClient(...)` |
-| Request data | `TokenExchangeContext#getFormParams()` | `org.keycloak.protocol.oidc` | where `request_id` enters |
+| Request data | `TokenExchangeContext#getFormParams()` | `org.keycloak.protocol.oidc` | where `project_id` enters |
 | Claim emission | `AbstractOIDCProtocolMapper` + `OIDC{AccessToken,IDToken}Mapper`, `UserInfoTokenMapper` | `org.keycloak.protocol.oidc.mappers` | override `setClaim(...)` |
 | Notes | `UserSessionModel#setNote/getNote` | `org.keycloak.models` | contract between the two layers |
 

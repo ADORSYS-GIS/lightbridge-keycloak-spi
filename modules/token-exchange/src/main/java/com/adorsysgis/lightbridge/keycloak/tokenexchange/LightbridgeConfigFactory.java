@@ -33,8 +33,8 @@ final class LightbridgeConfigFactory {
         String bearerToken = value(scope, "bearer-token", "BEARER_TOKEN", null);
         String basicUsername = value(scope, "basic-username", "BASIC_USERNAME", null);
         String basicPassword = value(scope, "basic-password", "BASIC_PASSWORD", null);
-        String requestIdParam = value(scope, "request-id-param", "REQUEST_ID_PARAM",
-                LightbridgeConfig.DEFAULT_REQUEST_ID_PARAM);
+        String projectIdParam = value(scope, "project-id-param", "PROJECT_ID_PARAM",
+                LightbridgeConfig.DEFAULT_PROJECT_ID_PARAM);
         long timeoutMillis = longValue(scope, "timeout-millis", "TIMEOUT_MILLIS",
                 LightbridgeConfig.DEFAULT_TIMEOUT.toMillis());
         Set<String> allowedRealms = parseRealms(value(scope, "allowed-realms", "ALLOWED_REALMS", null));
@@ -46,7 +46,7 @@ final class LightbridgeConfigFactory {
                 .bearerToken(bearerToken)
                 .basicUsername(basicUsername)
                 .basicPassword(basicPassword)
-                .requestIdParam(requestIdParam)
+                .projectIdParam(projectIdParam)
                 .requestTimeout(Duration.ofMillis(timeoutMillis))
                 .allowedRealms(allowedRealms)
                 .build();

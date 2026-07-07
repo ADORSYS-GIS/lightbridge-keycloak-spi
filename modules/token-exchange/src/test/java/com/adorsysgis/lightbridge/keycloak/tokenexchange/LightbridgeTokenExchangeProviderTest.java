@@ -22,30 +22,30 @@ class LightbridgeTokenExchangeProviderTest {
             new LightbridgeTokenExchangeProvider(resolver, config);
 
     @Test
-    void interceptsWhenRequestIdPresent() {
-        assertThat(provider.hasRequestId(contextWith("request_id", "req-123"))).isTrue();
+    void interceptsWhenProjectIdPresent() {
+        assertThat(provider.hasProjectId(contextWith("project_id", "proj-123"))).isTrue();
     }
 
     @Test
-    void ignoresWhenRequestIdAbsent() {
-        assertThat(provider.hasRequestId(contextWith(null, null))).isFalse();
+    void ignoresWhenProjectIdAbsent() {
+        assertThat(provider.hasProjectId(contextWith(null, null))).isFalse();
     }
 
     @Test
-    void ignoresWhenRequestIdBlank() {
-        assertThat(provider.hasRequestId(contextWith("request_id", "   "))).isFalse();
+    void ignoresWhenProjectIdBlank() {
+        assertThat(provider.hasProjectId(contextWith("project_id", "   "))).isFalse();
     }
 
     @Test
-    void honoursCustomRequestIdParam() {
+    void honoursCustomProjectIdParam() {
         LightbridgeConfig custom = LightbridgeConfig.builder()
                 .resolverBaseUrl("https://authz.example")
-                .requestIdParam("req_ref")
+                .projectIdParam("proj_ref")
                 .build();
         LightbridgeTokenExchangeProvider customProvider = new LightbridgeTokenExchangeProvider(resolver, custom);
 
-        assertThat(customProvider.hasRequestId(contextWith("req_ref", "abc"))).isTrue();
-        assertThat(customProvider.hasRequestId(contextWith("request_id", "abc"))).isFalse();
+        assertThat(customProvider.hasProjectId(contextWith("proj_ref", "abc"))).isTrue();
+        assertThat(customProvider.hasProjectId(contextWith("project_id", "abc"))).isFalse();
     }
 
     private TokenExchangeContext contextWith(String key, String value) {

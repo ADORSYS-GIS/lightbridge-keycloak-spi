@@ -1,9 +1,11 @@
 # Context-resolution contract
 
-The IdP adapter resolves an opaque `request_id` into business context by calling the **Identity Request
-Service**. This document is the source of truth for that HTTP contract. It is implemented by
+The IdP adapter resolves a `(subject, project_id)` pair into business context by calling the **Identity
+Request Service**. This document is the source of truth for that HTTP contract. It is implemented by
 `HttpContextResolver` in this repo and must be implemented by the backend (`lightbridge-authz`) — see
-[ADR-0004](../adr/0004-context-resolution-contract.md). **This endpoint does not exist in the backend yet.**
+[ADR-0004](../adr/0004-context-resolution-contract.md) and
+[ADR-0008](../adr/0008-resolve-by-project.md). **This endpoint is Basic-auth protected** (set
+`auth-mode: BASIC`).
 
 ## Endpoint
 
@@ -18,13 +20,11 @@ Authorization: <depends on configured auth mode>
 
 | Field        | Type   | Notes                                                        |
 | ------------ | ------ | ----------------------------------------------------------- |
-| `request_id` | string | Opaque, single-use pointer minted by the Identity Request Service. Required. |
 | `subject`    | string | Authenticated subject id from the exchanged token. May be null. |
-| `client_id`  | string | OAuth client performing the exchange. May be null.          |
-| `realm`      | string | Keycloak realm the exchange occurred in. Always sent; lets a multi-tenant service scope resolution per realm. May be null. |
+| `project_id` | string | The project to resolve context for. Required.               |
 
 ```json
-{ "request_id": "req-123", "subject": "user-abc", "client_id": "lightbridge-cli", "realm": "dev" }
+{ "subject": "user-abc", "project_id": "proj-123" }
 ```
 
 ### Responses
@@ -32,7 +32,7 @@ Authorization: <depends on configured auth mode>
 | Status | Meaning                                                       |
 | ------ | ------------------------------------------------------------ |
 | `200`  | Resolved. Body: `{ "account_id": "...", "project_id": "..." }` (both required). |
-| `404`  | `request_id` unknown, expired, or already consumed.          |
+| `404`  | Subject is not a member of the project, or the project is unknown. |
 | `4xx`  | Bad request / unauthorized — treated as a hard failure.      |
 | `5xx`  | Upstream error — treated as a hard failure.                  |
 
@@ -40,14 +40,14 @@ Authorization: <depends on configured auth mode>
 { "account_id": "acc-456", "project_id": "proj-789" }
 ```
 
-The backend enforces **TTL** and **single-use** semantics; the adapter treats the `request_id` as opaque and
-does not retry a consumed one.
+The backend resolves membership per call from the source of truth; the adapter passes the authenticated
+`subject` and requested `project_id` and does not cache the result.
 
 ## Authentication (adapter → service)
 
-Configured via `auth-mode`: `NONE`, `BEARER` (adds `Authorization: Bearer <token>`), or `BASIC`
-(`Authorization: Basic <base64(user:pass)>`). The Lightbridge backend accepts a Keycloak service-account
-bearer for `authz-api` (audience not enforced today) or HTTP basic on the OPA server.
+The endpoint is **Basic-auth protected**, so set `auth-mode: BASIC` (`Authorization: Basic
+<base64(user:pass)>`). The adapter also supports `NONE` and `BEARER` (adds `Authorization: Bearer <token>`)
+for other deployments.
 
 ## OpenAPI (3.1) fragment
 
@@ -59,9 +59,8 @@ info:
 paths:
   /idp/v1/resolve-context:
     post:
-      summary: Resolve an opaque request_id into account/project context
+      summary: Resolve a (subject, project_id) pair into account/project context
       security:
-        - bearerAuth: []
         - basicAuth: []
       requestBody:
         required: true
@@ -74,20 +73,17 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ResolveContextResponse' }
-        '404': { description: request_id unknown, expired or consumed }
+        '404': { description: subject not a member of the project, or project unknown }
 components:
   securitySchemes:
-    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
     basicAuth: { type: http, scheme: basic }
   schemas:
     ResolveContextRequest:
       type: object
-      required: [request_id]
+      required: [project_id]
       properties:
-        request_id: { type: string }
         subject: { type: string, nullable: true }
-        client_id: { type: string, nullable: true }
-        realm: { type: string, nullable: true }
+        project_id: { type: string }
     ResolveContextResponse:
       type: object
       required: [account_id, project_id]

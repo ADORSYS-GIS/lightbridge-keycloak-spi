@@ -11,12 +11,12 @@ of truth for *why* the code is shaped this way.
 
 ## The one idea to hold onto
 
-`request_id` is the **only** bridge from client to backend. Two layers, strictly separated:
+A `project_id` form param is the **only** bridge from client to backend. Two layers, strictly separated:
 
 - **`token-exchange` (smart):** `LightbridgeTokenExchangeProvider extends StandardTokenExchangeProvider`,
-  overrides exactly one method — `exchangeClientToOIDCClient(...)` — to resolve `request_id` via the
+  overrides exactly one method — `exchangeClientToOIDCClient(...)` — to resolve `(subject, project_id)` via the
   `ContextResolver` and write `lightbridge.account_id`/`lightbridge.project_id` **user-session notes**. Selected
-  over the built-in provider by factory `order()=100` + a `supports()` that gates on `request_id`. Optional
+  over the built-in provider by factory `order()=100` + a `supports()` that gates on `project_id`. Optional
   `allowed-realms` enforcement is **fail-closed inside the provider** (not `supports()`, which would fall back to
   the standard provider and leak a context-less token) — see [ADR-0007](docs/adr/0007-realm-enforcement.md).
 - **`protocol-mapper` (dumb):** `LightbridgeContextMapper` only copies those notes into claims. **Never** add

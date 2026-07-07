@@ -1,6 +1,6 @@
 # 4. Context-resolution HTTP contract (external dependency)
 
-- Status: Accepted
+- Status: Accepted; request/response payload superseded by [ADR-0008](0008-resolve-by-project.md)
 - Date: 2026-07-06
 - Deciders: Lightbridge team
 
