@@ -28,7 +28,15 @@ public final class HttpContextResolver implements ContextResolver {
 
     public HttpContextResolver(LightbridgeConfig config) {
         this(config,
-                HttpClient.newBuilder().connectTimeout(config.requestTimeout()).build(),
+                HttpClient.newBuilder()
+                        // Pin HTTP/1.1: the resolve call is a one-shot internal JSON POST, and the
+                        // JDK client's default HTTP/2 attempts an h2c upgrade over cleartext that
+                        // strict intermediaries (some reverse proxies / service meshes) reject with
+                        // 502, which would fail resolution closed. Over TLS this is negotiated via
+                        // ALPN anyway, so pinning 1.1 costs nothing and removes the footgun.
+                        .version(HttpClient.Version.HTTP_1_1)
+                        .connectTimeout(config.requestTimeout())
+                        .build(),
                 new ObjectMapper());
     }
 
