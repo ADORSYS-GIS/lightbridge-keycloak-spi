@@ -10,12 +10,13 @@ import com.adorsysgis.lightbridge.keycloak.common.ResolvedContext;
 public interface ContextResolver {
 
     /**
-     * Resolves an opaque {@code request_id} into business context.
+     * Resolves a subject plus project into business context.
      *
-     * @param request the bridge payload
+     * @param request the bridge payload carrying the authenticated subject and requested project
      * @return the resolved account/project context
-     * @throws ContextResolutionException if the request cannot be resolved (unknown/expired/consumed,
-     *                                     transport failure, or a malformed response)
+     * @throws ContextResolutionException if the request cannot be resolved (subject not a member of the
+     *                                     project, unknown project, transport failure, or a malformed
+     *                                     response)
      */
     ResolvedContext resolve(ContextRequest request) throws ContextResolutionException;
 }

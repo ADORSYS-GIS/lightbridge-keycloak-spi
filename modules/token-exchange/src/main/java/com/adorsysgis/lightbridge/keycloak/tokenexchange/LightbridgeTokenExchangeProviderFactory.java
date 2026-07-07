@@ -15,7 +15,7 @@ import java.lang.System.Logger.Level;
 /**
  * Registers {@link LightbridgeTokenExchangeProvider}. Its {@link #order()} is higher than the built-in
  * {@code StandardTokenExchangeProviderFactory} (10) so Keycloak offers this provider first; when no
- * {@code request_id} is present the provider's {@code supports()} returns false and the built-in
+ * {@code project_id} is present the provider's {@code supports()} returns false and the built-in
  * standard provider handles the exchange unchanged.
  */
 public class LightbridgeTokenExchangeProviderFactory implements TokenExchangeProviderFactory {
@@ -39,7 +39,7 @@ public class LightbridgeTokenExchangeProviderFactory implements TokenExchangePro
         this.resolver = new HttpContextResolver(config);
         if (!config.isResolverConfigured()) {
             LOG.log(Level.WARNING, "Lightbridge token-exchange provider loaded without a resolver base URL; "
-                    + "request_id exchanges will be rejected until it is configured.");
+                    + "project_id exchanges will be rejected until it is configured.");
         }
     }
 

@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * SPIs register. This proves the jars deploy cleanly (no missing classes, valid META-INF/services)
  * against the exact server version we target. Skips when Docker is unavailable.
  *
- * <p>The full token-exchange claim flow (request_id -> resolved claims) is documented as a manual
+ * <p>The full token-exchange claim flow (project_id -> resolved claims) is documented as a manual
  * curl walkthrough in {@code demo/README.md}; automating it here is tracked as a follow-up.
  */
 class ProviderDeploymentIT {

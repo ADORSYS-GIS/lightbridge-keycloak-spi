@@ -2,7 +2,7 @@
 
 Boots Keycloak 26 with the Lightbridge provider jars and a WireMock **stub** resolver (the real backend
 `POST /idp/v1/resolve-context` does not exist yet — see [ADR-0004](../docs/adr/0004-context-resolution-contract.md)).
-The stub returns `{"account_id":"acc-demo-456","project_id":"proj-demo-789"}` for any `request_id`.
+The stub returns `{"account_id":"acc-demo-456","project_id":"proj-demo-789"}` for any `project_id`.
 
 ## Run
 
@@ -36,18 +36,18 @@ SUBJECT=$(curl -s -d grant_type=password -d client_id=lightbridge-cli \
   -d client_secret=<secret> -d username=<user> -d password=<pass> \
   http://localhost:8080/realms/<realm>/protocol/openid-connect/token | jq -r .access_token)
 
-# b) Exchange it, passing an opaque request_id
+# b) Exchange it, passing the target project_id
 curl -s http://localhost:8080/realms/<realm>/protocol/openid-connect/token \
   -d grant_type=urn:ietf:params:oauth:grant-type:token-exchange \
   -d client_id=lightbridge-cli -d client_secret=<secret> \
   -d subject_token=$SUBJECT \
   -d subject_token_type=urn:ietf:params:oauth:token-type:access_token \
   -d audience=lightbridge-cli \
-  -d request_id=req-123 | jq -r .access_token | cut -d. -f2 | base64 -d 2>/dev/null | jq
+  -d project_id=proj-123 | jq -r .access_token | cut -d. -f2 | base64 -d 2>/dev/null | jq
 ```
 
 The decoded access token should contain `"account_id": "acc-demo-456"` and `"project_id": "proj-demo-789"`.
-Without a `request_id`, the exchange runs through Keycloak's built-in standard provider and those claims are
+Without a `project_id`, the exchange runs through Keycloak's built-in standard provider and those claims are
 absent.
 
 > Automating this end to end (realm scaffolding + claim assertion) is a follow-up; today the

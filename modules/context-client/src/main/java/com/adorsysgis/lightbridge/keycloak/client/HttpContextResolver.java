@@ -56,7 +56,8 @@ public final class HttpContextResolver implements ContextResolver {
 
         int status = response.statusCode();
         if (status == 404) {
-            throw new ContextResolutionException("request_id not found, expired or already consumed", 404);
+            throw new ContextResolutionException(
+                    "subject is not a member of the project, or the project is unknown", 404);
         }
         if (status < 200 || status >= 300) {
             throw new ContextResolutionException("Context-resolution service returned HTTP " + status, status);
@@ -96,10 +97,8 @@ public final class HttpContextResolver implements ContextResolver {
 
     private String writeBody(ContextRequest request) {
         ObjectNode node = objectMapper.createObjectNode();
-        node.put("request_id", request.requestId());
         node.put("subject", request.subject());
-        node.put("client_id", request.clientId());
-        node.put("realm", request.realm());
+        node.put("project_id", request.projectId());
         try {
             return objectMapper.writeValueAsString(node);
         } catch (JsonProcessingException e) {

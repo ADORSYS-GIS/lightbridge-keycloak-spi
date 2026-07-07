@@ -2,7 +2,7 @@ plugins {
     id("lightbridge.java-conventions")
 }
 
-description = "Custom Keycloak TokenExchangeProvider: reads request_id, resolves context, writes session notes."
+description = "Custom Keycloak TokenExchangeProvider: reads project_id, resolves context, writes session notes."
 
 dependencies {
     implementation(project(":modules:spi-common"))
