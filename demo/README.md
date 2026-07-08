@@ -39,15 +39,16 @@ SUBJECT=$(curl -s -d grant_type=password -d client_id=lightbridge-cli \
 # b) Exchange it, passing the target project_id (do NOT send `audience` — a self-audience is
 #    rejected with "Requested audience not available"; omitting it exchanges for the same client).
 #    The jq filter decodes the JWT payload: a JWT is base64URL (alphabet `-_`, no padding), so it
-#    must be translated to standard base64 before @base64d — plain `base64 -d` mangles it and hides
-#    the claims behind a jq parse error.
+#    must be translated to standard base64 AND re-padded before @base64d — plain `base64 -d` mangles
+#    it and hides the claims behind a jq parse error. (jq 1.7+ tolerates the missing padding, but the
+#    `("=" * …)` step keeps it working on jq 1.6 too.)
 curl -s "$KC" \
   -d grant_type=urn:ietf:params:oauth:grant-type:token-exchange \
   -d client_id=lightbridge-cli -d client_secret=lightbridge-cli-secret \
   -d subject_token=$SUBJECT \
   -d subject_token_type=urn:ietf:params:oauth:token-type:access_token \
   -d project_id=proj-123 \
-  | jq '.access_token | split(".")[1] | gsub("-";"+") | gsub("_";"/") | @base64d | fromjson | {account_id, project_id}'
+  | jq '.access_token | split(".")[1] | gsub("-";"+") | gsub("_";"/") | . + ("=" * ((4 - (length % 4)) % 4)) | @base64d | fromjson | {account_id, project_id}'
 ```
 
 The decoded access token contains `"account_id": "acc-demo-456"` and `"project_id": "proj-demo-789"`.
