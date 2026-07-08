@@ -54,8 +54,11 @@ locally: `kc.sh build` must register both providers.
   jars at the pinned version (`gradle/libs.versions.toml`) rather than trusting memory. The SPI id is
   `oauth2-token-exchange` (not `token-exchange`).
 - **`META-INF/services`** files register the providers — the file name is the fully-qualified factory interface.
-- Backend `POST /idp/v1/resolve-context` **does not exist yet** ([ADR-0004](docs/adr/0004-context-resolution-contract.md));
-  build/test against the WireMock stub in `demo/`. The provider **fails closed** if resolution fails.
+- Backend `POST /idp/v1/resolve-context` is **live** — implemented in `lightbridge-authz` as the
+  resolve-by-project endpoint ([ADR-0008](docs/adr/0008-resolve-by-project.md), superseding the payload of
+  [ADR-0004](docs/adr/0004-context-resolution-contract.md)) and served by its OPA/validation server behind
+  Basic auth. The `demo/` still uses a WireMock **stub** to stay self-contained. The provider **fails
+  closed** if resolution fails.
 
 <!-- ai-governance:stanza -->
 <!-- BEGIN: AI Governance stanza (managed by ADORSYS-GIS/ai-governance) -->
