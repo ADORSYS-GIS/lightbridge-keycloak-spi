@@ -37,19 +37,43 @@ SUBJECT=$(curl -s -d grant_type=password -d client_id=lightbridge-cli \
   "$KC" | jq -r .access_token)
 
 # b) Exchange it, passing the target project_id (do NOT send `audience` — a self-audience is
-#    rejected with "Requested audience not available"; omitting it exchanges for the same client)
+#    rejected with "Requested audience not available"; omitting it exchanges for the same client).
+#    The jq filter decodes the JWT payload: a JWT is base64URL (alphabet `-_`, no padding), so it
+#    must be translated to standard base64 AND re-padded before @base64d — plain `base64 -d` mangles
+#    it and hides the claims behind a jq parse error. (jq 1.7+ tolerates the missing padding, but the
+#    `("=" * …)` step keeps it working on jq 1.6 too.)
 curl -s "$KC" \
   -d grant_type=urn:ietf:params:oauth:grant-type:token-exchange \
   -d client_id=lightbridge-cli -d client_secret=lightbridge-cli-secret \
   -d subject_token=$SUBJECT \
   -d subject_token_type=urn:ietf:params:oauth:token-type:access_token \
-  -d project_id=proj-123 | jq -r .access_token | cut -d. -f2 \
-  | base64 -d 2>/dev/null | jq '{account_id, project_id}'
+  -d project_id=proj-123 \
+  | jq '.access_token | split(".")[1] | gsub("-";"+") | gsub("_";"/") | . + ("=" * ((4 - (length % 4)) % 4)) | @base64d | fromjson | {account_id, project_id}'
 ```
 
 The decoded access token contains `"account_id": "acc-demo-456"` and `"project_id": "proj-demo-789"`.
 Without a `project_id`, the exchange runs through Keycloak's built-in standard provider and those claims
 are absent (the Lightbridge provider only engages when `project_id` is present).
+
+## Troubleshooting: "the JWT has no account_id / project_id"
+
+Work down this list — the flow above is verified against Keycloak 26.6.4, so a miss is almost always
+one of these:
+
+1. **Decoding the token wrong.** A JWT payload is **base64URL without padding**; `base64 -d` (standard
+   alphabet) truncates it and the claims silently vanish behind a `jq: Unfinished JSON term` error. Use
+   the `gsub`-based filter above, `jwt.io`, or `python3 -c 'import sys,base64,json;p=sys.stdin.read().split(".")[1];p+="="*(-len(p)%4);print(base64.urlsafe_b64decode(p).decode())'`.
+2. **Inspecting the wrong token.** The claims are on the **exchanged** token, not the `subject` password-grant
+   token. And only when the request carries `project_id`.
+3. **Stale / missing provider jars.** Re-run `./gradlew :dist:collectProviders` before `docker compose up`;
+   an empty `dist/build/providers` means the provider never loads.
+4. **Confirm the provider actually ran.** The demo logs at DEBUG (`KC_LOG_LEVEL` in the compose file), so
+   `docker compose logs keycloak | grep lightbridge` should show `Sealed Lightbridge context into session
+   notes …` then `Copying Lightbridge session notes into token claims …`. If those lines are present the
+   claims ARE in the token and the problem is your decode (item 1).
+5. **Your own realm/client (not the demo realm).** The client needs **Standard Token Exchange enabled**
+   and the **Lightbridge Context Mapper** attached with `access.token.claim=true`. Check
+   admin → Server Info → Providers for `lightbridge-standard` / `lightbridge-context-mapper`.
 
 > The `integration-tests` module asserts the providers **register** in real Keycloak; this demo covers
 > the claim flow. Asserting claims automatically against the **real** backend (not the stub) is the
