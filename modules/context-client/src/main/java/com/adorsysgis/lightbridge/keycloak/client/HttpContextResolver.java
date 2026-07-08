@@ -8,6 +8,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.io.IOException;
+import java.lang.System.Logger;
+import java.lang.System.Logger.Level;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -21,6 +23,8 @@ import java.util.Base64;
  * of classloader conflicts.
  */
 public final class HttpContextResolver implements ContextResolver {
+
+    private static final Logger LOG = System.getLogger(HttpContextResolver.class.getName());
 
     private final LightbridgeConfig config;
     private final HttpClient httpClient;
@@ -52,25 +56,38 @@ public final class HttpContextResolver implements ContextResolver {
             throw new ContextResolutionException("Lightbridge resolver base URL is not configured");
         }
 
+        URI uri = URI.create(trimTrailingSlash(config.resolverBaseUrl()) + config.resolverPath());
+        LOG.log(Level.DEBUG, "Resolving Lightbridge context: POST {0} (authMode={1}, subject={2}, project_id={3})",
+                uri, config.authMode(), request.subject(), request.projectId());
+
         HttpResponse<String> response;
         try {
             response = httpClient.send(buildRequest(request), HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
         } catch (IOException e) {
+            LOG.log(Level.ERROR, "Lightbridge context-resolution call to " + uri + " failed", e);
             throw new ContextResolutionException("Failed to call context-resolution service", e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+            LOG.log(Level.ERROR, "Interrupted during Lightbridge context-resolution call to " + uri, e);
             throw new ContextResolutionException("Interrupted while calling context-resolution service", e);
         }
 
         int status = response.statusCode();
+        LOG.log(Level.DEBUG, "Lightbridge context-resolution response: HTTP {0}", status);
         if (status == 404) {
+            LOG.log(Level.DEBUG, "Lightbridge context-resolution returned 404 for subject={0}, project_id={1} "
+                    + "(non-member or unknown project)", request.subject(), request.projectId());
             throw new ContextResolutionException(
                     "subject is not a member of the project, or the project is unknown", 404);
         }
         if (status < 200 || status >= 300) {
+            LOG.log(Level.WARNING, "Lightbridge context-resolution service returned HTTP {0}", status);
             throw new ContextResolutionException("Context-resolution service returned HTTP " + status, status);
         }
-        return parse(response.body());
+        ResolvedContext resolved = parse(response.body());
+        LOG.log(Level.DEBUG, "Lightbridge context resolved: account_id={0}, project_id={1}",
+                resolved.accountId(), resolved.projectId());
+        return resolved;
     }
 
     private HttpRequest buildRequest(ContextRequest request) {

@@ -46,7 +46,10 @@ public class LightbridgeTokenExchangeProvider extends StandardTokenExchangeProvi
 
     @Override
     public boolean supports(TokenExchangeContext context) {
-        return super.supports(context) && hasProjectId(context);
+        boolean supported = super.supports(context) && hasProjectId(context);
+        LOG.log(Level.DEBUG, "Lightbridge token exchange supports={0} (project_id param ''{1}'' present={2})",
+                supported, config.projectIdParam(), hasProjectId(context));
+        return supported;
     }
 
     boolean hasProjectId(TokenExchangeContext context) {
@@ -66,11 +69,14 @@ public class LightbridgeTokenExchangeProvider extends StandardTokenExchangeProvi
     private void injectContext(UserModel targetUser, UserSessionModel targetUserSession) {
         String projectId = formParams.getFirst(config.projectIdParam());
         if (projectId == null || projectId.isBlank()) {
+            LOG.log(Level.DEBUG, "No project_id on the exchange; skipping Lightbridge context injection");
             return;
         }
 
         String subject = targetUser == null ? null : targetUser.getId();
         String realmName = realm == null ? null : realm.getName();
+        LOG.log(Level.DEBUG, "Injecting Lightbridge context: realm={0}, subject={1}, project_id={2}",
+                realmName, subject, projectId);
 
         if (!config.isRealmAllowed(realmName)) {
             LOG.log(Level.WARNING, "Lightbridge token exchange rejected for realm: " + realmName);
@@ -82,8 +88,11 @@ public class LightbridgeTokenExchangeProvider extends StandardTokenExchangeProvi
             ResolvedContext resolved = resolver.resolve(new ContextRequest(subject, projectId));
             targetUserSession.setNote(LightbridgeSessionNotes.ACCOUNT_ID, resolved.accountId());
             targetUserSession.setNote(LightbridgeSessionNotes.PROJECT_ID, resolved.projectId());
+            LOG.log(Level.DEBUG, "Sealed Lightbridge context into session notes: account_id={0}, project_id={1}",
+                    resolved.accountId(), resolved.projectId());
         } catch (ContextResolutionException e) {
-            LOG.log(Level.WARNING, "Lightbridge context resolution failed: " + e.getMessage());
+            LOG.log(Level.WARNING, "Lightbridge context resolution failed (subject={0}, project_id={1}): {2}",
+                    subject, projectId, e.getMessage());
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
                     "Unable to resolve request context", Response.Status.BAD_REQUEST);
         }
