@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   image:
-    runs-on: arc-runner-set-sse
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -39,7 +39,8 @@ jobs:
           REF_TYPE: ${{ github.ref_type }}
           REF_NAME: ${{ github.ref_name }}
           SHA: ${{ github.sha }}
-          # buildah in an unprivileged ARC (Kubernetes) pod: avoid overlayfs/userns needs
+          # Conservative rootless buildah config that works on GitHub-hosted runners
+          # without overlayfs/userns setup (vfs is slower but universally available).
           STORAGE_DRIVER: vfs
           BUILDAH_ISOLATION: chroot
         run: |
