@@ -3,6 +3,8 @@ package com.adorsysgis.lightbridge.keycloak.tokenexchange;
 import com.adorsysgis.lightbridge.keycloak.common.LightbridgeConfig;
 import org.keycloak.Config;
 
+import java.lang.System.Logger;
+import java.lang.System.Logger.Level;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Locale;
@@ -22,6 +24,7 @@ import java.util.stream.Collectors;
 final class LightbridgeConfigFactory {
 
     private static final String ENV_PREFIX = "LIGHTBRIDGE_";
+    private static final Logger LOG = System.getLogger(LightbridgeConfigFactory.class.getName());
 
     private LightbridgeConfigFactory() {
     }
@@ -39,10 +42,17 @@ final class LightbridgeConfigFactory {
                 LightbridgeConfig.DEFAULT_TIMEOUT.toMillis());
         Set<String> allowedRealms = parseRealms(value(scope, "allowed-realms", "ALLOWED_REALMS", null));
 
+        LightbridgeConfig.AuthMode authMode = parseAuthMode(authModeRaw);
+        LOG.log(Level.DEBUG, "Resolved Lightbridge config: resolverBaseUrl={0}, resolverPath={1}, authMode={2}, "
+                + "basicUsername={3}, projectIdParam={4}, allowedRealms={5}, timeoutMs={6} (secrets omitted)",
+                baseUrl == null ? "<unset>" : baseUrl, path, authMode,
+                basicUsername == null ? "<unset>" : basicUsername, projectIdParam,
+                allowedRealms.isEmpty() ? "<all>" : allowedRealms, timeoutMillis);
+
         return LightbridgeConfig.builder()
                 .resolverBaseUrl(baseUrl)
                 .resolverPath(path)
-                .authMode(parseAuthMode(authModeRaw))
+                .authMode(authMode)
                 .bearerToken(bearerToken)
                 .basicUsername(basicUsername)
                 .basicPassword(basicPassword)

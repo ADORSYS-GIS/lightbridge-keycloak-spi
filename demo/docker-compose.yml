@@ -17,6 +17,10 @@ services:
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      # Debug logging for the Lightbridge SPI (every com.adorsysgis.lightbridge.*
+      # logger) so the demo shows the full resolve/seal flow out of the box; the
+      # rest of Keycloak stays at INFO.
+      KC_LOG_LEVEL: "INFO,com.adorsysgis.lightbridge:debug"
       # Point the Lightbridge token-exchange provider at the stub resolver.
       # (LIGHTBRIDGE_* is the container-friendly fallback for the SPI config keys.)
       LIGHTBRIDGE_RESOLVER_BASE_URL: http://wiremock:8080
