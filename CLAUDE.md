@@ -59,6 +59,11 @@ locally: `kc.sh build` must register both providers.
   [ADR-0004](docs/adr/0004-context-resolution-contract.md)) and served by its OPA/validation server behind
   Basic auth. The `demo/` still uses a WireMock **stub** to stay self-contained. The provider **fails
   closed** if resolution fails.
+- **This SPI never mints an id — treat every id here as opaque.** `sub` is Keycloak's own id, in whatever
+  shape Keycloak assigns it. `account_id`/`project_id` are CUID2 strings owned and minted by the
+  Lightbridge backend ([house id format ADR](https://github.com/ADORSYS-GIS/webank-context/blob/master/decisions/0039-cuid2-is-the-house-id-format.md)).
+  Don't add `UUID.randomUUID()`/id-generation here, don't shape-validate any of these ids (don't assume
+  UUID *or* CUID2 format), and don't sort by id.
 
 <!-- ai-governance:stanza -->
 <!-- BEGIN: AI Governance stanza (managed by ADORSYS-GIS/ai-governance) -->
